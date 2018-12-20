@@ -9,7 +9,7 @@ There isn't too much to say here.  I took most of the non-integrated ntlm code f
 
 I worked off of tag 6.5.4, but the changes are minimal and can be seen in the 6.5.4-ntlm commit.
 To check it out, at the end of your connection string, include the domain and NTLM version (either 1 or 2, though other numbers aren't validated).
-jdbc:sqlserver://localhost;userName=sa;password=pwd;domain=MACHINE-NAME;NTLM=2
+jdbc:sqlserver://localhost;userName=sa;password=pwd;integratedSecurity=true;domain=MACHINE-NAME;NTLM=2
 
 # Microsoft JDBC Driver for SQL Server
 
