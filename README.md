@@ -4,6 +4,13 @@
 [![Javadocs](http://javadoc.io/badge/com.microsoft.sqlserver/mssql-jdbc.svg)](http://javadoc.io/doc/com.microsoft.sqlserver/mssql-jdbc)
 [![Gitter](https://img.shields.io/gitter/room/badges/shields.svg)](https://gitter.im/Microsoft/mssql-developers)
 </br>
+# Microsoft JDBC Driver Fork for Non-Integrated NTLM Support
+There isn't too much to say here.  I took most of the non-integrated ntlm code from JTDS, created an NtlmAuthentication class that extends SSPIAuthentication, added the domain & ntlm properties, as well as the NTLM AuthenticationScheme enum. JTDS and MS code were tweaked as needed.  It seems non-integrated NTLM support will be added to the official driver, so this is here mostly as something to take a peak at.
+
+I worked off of tag 6.5.4, but the changes are minimal and can be seen in the 6.5.4-ntlm commit.
+To check it out, at the end of your connection string, include the domain and NTLM version (either 1 or 2, though other numbers aren't validated).
+jdbc:sqlserver://localhost;userName=sa;password=pwd;domain=MACHINE-NAME;NTLM=2
+
 # Microsoft JDBC Driver for SQL Server
 
 Welcome to the Microsoft JDBC Driver for SQL Server project!

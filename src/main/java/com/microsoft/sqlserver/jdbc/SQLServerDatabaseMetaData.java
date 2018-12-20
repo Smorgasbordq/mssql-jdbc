@@ -1425,6 +1425,7 @@ public final class SQLServerDatabaseMetaData implements java.sql.DatabaseMetaDat
 
             // making sure no security info is exposed.
             if (!name.equals(SQLServerDriverBooleanProperty.INTEGRATED_SECURITY.toString())
+            		&& !name.equals(SQLServerDriverIntProperty.NTLM.toString()) && !name.equals(SQLServerDriverStringProperty.DOMAIN.toString())
                     && !name.equals(SQLServerDriverStringProperty.USER.toString()) && !name.equals(SQLServerDriverStringProperty.PASSWORD.toString())
                     && !name.equals(SQLServerDriverStringProperty.KEY_STORE_SECRET.toString())) {
                 String val = info[index].value;

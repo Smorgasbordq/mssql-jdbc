@@ -177,7 +177,8 @@ enum KeyStoreAuthentication {
 
 enum AuthenticationScheme {
     nativeAuthentication,
-    javaKerberos;
+    javaKerberos,
+    NTLM;
     
     static AuthenticationScheme valueOfString(String value) throws SQLServerException {
         AuthenticationScheme scheme;
@@ -186,6 +187,9 @@ enum AuthenticationScheme {
         }
         else if (value.toLowerCase(Locale.US).equalsIgnoreCase(AuthenticationScheme.nativeAuthentication.toString())) {
             scheme = AuthenticationScheme.nativeAuthentication;
+        }
+        else if (value.toLowerCase(Locale.US).equalsIgnoreCase(AuthenticationScheme.NTLM.toString())) {
+            scheme = AuthenticationScheme.NTLM;
         }
         else {
             MessageFormat form = new MessageFormat(SQLServerException.getErrString("R_invalidAuthenticationScheme"));
@@ -268,6 +272,7 @@ enum SQLServerDriverStringProperty
 	FAILOVER_PARTNER           ("failoverPartner",         ""),
 	HOSTNAME_IN_CERTIFICATE    ("hostNameInCertificate",   ""),
 	INSTANCE_NAME              ("instanceName",            ""),
+	DOMAIN              	   ("domain",            	   ""),
 	JAAS_CONFIG_NAME           ("jaasConfigurationName",   "SQLJDBCDriver"),
 	PASSWORD                   ("password",                ""),
 	RESPONSE_BUFFERING         ("responseBuffering",       "adaptive"),
@@ -310,6 +315,7 @@ enum SQLServerDriverStringProperty
 }
 
 enum SQLServerDriverIntProperty {
+	NTLM                                	   ("NTLM",                              	   0),  
     PACKET_SIZE                                ("packetSize",                              TDS.DEFAULT_PACKET_SIZE),            
     LOCK_TIMEOUT                               ("lockTimeout",                             -1),
     LOGIN_TIMEOUT                              ("loginTimeout",                            15),
@@ -393,6 +399,8 @@ public final class SQLServerDriver implements java.sql.Driver {
         new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.HOSTNAME_IN_CERTIFICATE.toString(),       		      SQLServerDriverStringProperty.HOSTNAME_IN_CERTIFICATE.getDefaultValue(),           					  false,      null),
         new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.INSTANCE_NAME.toString(),                 		      SQLServerDriverStringProperty.INSTANCE_NAME.getDefaultValue(),           							      false,      null),
         new SQLServerDriverPropertyInfo(SQLServerDriverBooleanProperty.INTEGRATED_SECURITY.toString(),          		      Boolean.toString(SQLServerDriverBooleanProperty.INTEGRATED_SECURITY.getDefaultValue()),      		      false,      TRUE_FALSE),
+        new SQLServerDriverPropertyInfo(SQLServerDriverIntProperty.NTLM.toString(),          		      					  Integer.toString(SQLServerDriverIntProperty.NTLM.getDefaultValue()),      		      				  false,      null),
+        new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.DOMAIN.toString(),                          		      SQLServerDriverStringProperty.DOMAIN.getDefaultValue(),           									  false,      null),
         new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.KEY_STORE_AUTHENTICATION.toString(),            	      SQLServerDriverStringProperty.KEY_STORE_AUTHENTICATION.getDefaultValue(),       						  false,      new String[] {KeyStoreAuthentication.JavaKeyStorePassword.toString()}),
         new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.KEY_STORE_SECRET .toString(),            			      SQLServerDriverStringProperty.KEY_STORE_SECRET.getDefaultValue(),       								  false,      null),
         new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.KEY_STORE_LOCATION .toString(),            		      SQLServerDriverStringProperty.KEY_STORE_LOCATION.getDefaultValue(),       							  false,      null),        

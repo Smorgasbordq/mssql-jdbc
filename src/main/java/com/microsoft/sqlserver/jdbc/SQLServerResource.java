@@ -166,6 +166,8 @@ public final class SQLServerResource extends ListResourceBundle {
 				{"R_lastUpdateCountPropertyDescription", "Ensures that only the last update count is returned from an SQL statement passed to the server."},
 				{"R_disableStatementPoolingPropertyDescription", "Disables the statement pooling feature."},
 				{"R_integratedSecurityPropertyDescription", "Indicates whether Windows authentication will be used to connect to SQL Server."},
+				{"R_NTLMPropertyDescription", "Indicates whether NTLM authentication will be used to connect to SQL Server."},
+				{"R_domainPropertyDescription", "Indicates the domain for NTLM authentication."},
 				{"R_authenticationSchemePropertyDescription", "The authentication scheme to be used for integrated authentication."},
 				{"R_lockTimeoutPropertyDescription", "The number of milliseconds to wait before the database reports a lock time-out."},
 				{"R_loginTimeoutPropertyDescription", "The number of seconds the driver should wait before timing out a failed connection."},

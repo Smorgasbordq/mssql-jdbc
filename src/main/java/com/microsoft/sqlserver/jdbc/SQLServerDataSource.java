@@ -180,6 +180,16 @@ public class SQLServerDataSource implements ISQLServerDataSource, javax.sql.Data
     public void setIntegratedSecurity(boolean enable) {
         setBooleanProperty(connectionProps, SQLServerDriverBooleanProperty.INTEGRATED_SECURITY.toString(), enable);
     }
+    
+    @Override
+    public void setNTLM(int mode) {
+    	setIntProperty(connectionProps, SQLServerDriverIntProperty.NTLM.toString(), mode);
+    }
+    
+    @Override
+    public void setDomain(String domain) {
+    	setStringProperty(connectionProps, SQLServerDriverStringProperty.DOMAIN.toString(), domain);
+    }
 
     @Override
     public void setAuthenticationScheme(String authenticationScheme) {

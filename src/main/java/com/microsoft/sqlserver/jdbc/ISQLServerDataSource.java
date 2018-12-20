@@ -16,6 +16,10 @@ import org.ietf.jgss.GSSCredential;
  * This interface is implemented by {@link SQLServerDataSource} Class.
  */
 public interface ISQLServerDataSource extends javax.sql.CommonDataSource {
+	
+	public void setNTLM(int mode);
+	
+	public void setDomain(String domain);
 
     /**
      * Sets the application intent.
