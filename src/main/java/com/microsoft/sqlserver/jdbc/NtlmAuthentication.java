@@ -9,22 +9,17 @@ import java.util.Random;
 import com.microsoft.sqlserver.jdbc.jtds.NtlmAuth;
 
 final class NtlmAuthentication extends SSPIAuthentication {
-	private String user;
-	private String pwd;
-	private String domain;
+	private final SQLServerConnection con;
 
-	private int NTLM;
-
-	public NtlmAuthentication(SQLServerConnection ssc) {
-		this.user = ssc.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.USER.toString());
-		this.pwd = ssc.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.PASSWORD.toString());
-		this.domain = ssc.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.DOMAIN.toString())
-				.toUpperCase(Locale.ENGLISH);
-		this.NTLM = Integer
-				.parseInt(ssc.activeConnectionProperties.getProperty(SQLServerDriverIntProperty.NTLM.toString()));
+	public NtlmAuthentication(SQLServerConnection con) {
+		this.con = con;
 	}
 
 	private byte[] sendNtlmInitial() {
+		String domain = con.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.DOMAIN.toString())
+				.toUpperCase(Locale.ENGLISH);
+		int NTLM = Integer
+				.parseInt(con.activeConnectionProperties.getProperty(SQLServerDriverIntProperty.NTLM.toString()));
 		// TODO: Does the domain matter? It seems like anything is passible as the
 		// domain for ntlmInitial...
 		// final int domainByteLen = domain.length()*2;
@@ -80,6 +75,12 @@ final class NtlmAuthentication extends SSPIAuthentication {
 	}
 
 	private byte[] sendNtlmChallengeResponse(byte[] nonce, byte[] ntlmTarget) {
+		String user = con.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.USER.toString());
+		String pwd = con.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.PASSWORD.toString());
+		String domain = con.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.DOMAIN.toString())
+				.toUpperCase(Locale.ENGLISH);
+		int NTLM = Integer
+				.parseInt(con.activeConnectionProperties.getProperty(SQLServerDriverIntProperty.NTLM.toString()));
 		// Prepare and Set NTLM Type 2 message appropriately
 		// Author: mahi@aztec.soft.net
 
@@ -201,10 +202,7 @@ final class NtlmAuthentication extends SSPIAuthentication {
 
 	@Override
 	int ReleaseClientContext() throws SQLServerException {
-		user = null;
-		pwd = null;
-		domain = null;
-		NTLM = 0;
+		// Perform nothing.
 		return 0;
 	}
 }
