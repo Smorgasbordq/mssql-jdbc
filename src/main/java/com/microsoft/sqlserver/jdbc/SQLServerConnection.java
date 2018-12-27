@@ -959,7 +959,7 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
 		return tdsPacketSize;
 	}
 
-	private TDSChannel tdsChannel;
+	private TDSChannelAbstr tdsChannel;
 
 	private TDSCommand currentCommand = null;
 
@@ -1941,9 +1941,11 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
 			String mirror = null;
 			if (null == fo)
 				mirror = failOverPartnerPropertyValue;
-
+			
+			final String pipeType = activeConnectionProperties.getProperty(SQLServerDriverIntProperty.PIPE_TYPE.toString());
+			final int intPipeType = pipeType==null ? 0 : "1".equals(pipeType) ? 1 : "2".equals(pipeType) ? 2 : 0;
 			long startTime = System.currentTimeMillis();
-			login(activeConnectionProperties.getProperty(serverNameProperty), instanceValue, nPort, mirror, fo,
+			login(activeConnectionProperties.getProperty(serverNameProperty), instanceValue, intPipeType, nPort, mirror, fo,
 					loginTimeoutSeconds, startTime);
 
 			// If SSL is to be used for the duration of the connection, then make sure
@@ -1992,7 +1994,7 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
 	// If the server returns a failover upon connection, we shall store the FO in
 	// our cache.
 	//
-	private void login(String primary, String primaryInstanceName, int primaryPortNumber, String mirror,
+	private void login(String primary, String primaryInstanceName, int pipeType, int primaryPortNumber, String mirror,
 			FailoverInfo foActual, int timeout, long timerStart) throws SQLServerException {
 		// standardLogin would be false only for db mirroring scenarios. It would be
 		// true
@@ -2105,7 +2107,7 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
 				// Attempt login.
 				// use Place holder to make sure that the failoverdemand is done.
 
-				connectHelper(currentConnectPlaceHolder, TimerRemaining(intervalExpire), timeout, useParallel, useTnir,
+				connectHelper(currentConnectPlaceHolder, pipeType, TimerRemaining(intervalExpire), timeout, useParallel, useTnir,
 						(0 == attemptNumber), // Is
 												// this
 												// the
@@ -2437,7 +2439,7 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
 	 * @param timeOutsliceInMillisForFullTimeout
 	 * @throws SQLServerException
 	 */
-	private void connectHelper(ServerPortPlaceHolder serverInfo, int timeOutsliceInMillis, int timeOutFullInSeconds,
+	private void connectHelper(ServerPortPlaceHolder serverInfo, int pipeType, int timeOutsliceInMillis, int timeOutFullInSeconds,
 			boolean useParallel, boolean useTnir, boolean isTnirFirstAttempt, int timeOutsliceInMillisForFullTimeout)
 			throws SQLServerException {
 		// Make the initial tcp-ip connection.
@@ -2455,14 +2457,19 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
 		if (StringUtils.isEmpty(hostName)) {
 			hostName = Util.lookupHostName();
 		}
+		
+		switch(pipeType) {
+			case 2:		// TODO:
+			case 1: 	tdsChannel = new TDSChannelPipe(this);	break;
+			default: 	tdsChannel = new TDSChannelTcp(this);	break;
+		}
 
 		// if the timeout is infinite slices are infinite too.
-		tdsChannel = new TDSChannel(this);
 		if (0 == timeOutFullInSeconds)
-			tdsChannel.open(serverInfo.getServerName(), serverInfo.getPortNumber(), 0, useParallel, useTnir,
+			tdsChannel.open(serverInfo, 0, useParallel, useTnir,
 					isTnirFirstAttempt, timeOutsliceInMillisForFullTimeout);
 		else
-			tdsChannel.open(serverInfo.getServerName(), serverInfo.getPortNumber(), timeOutsliceInMillis, useParallel,
+			tdsChannel.open(serverInfo, timeOutsliceInMillis, useParallel,
 					useTnir, isTnirFirstAttempt, timeOutsliceInMillisForFullTimeout);
 
 		setState(State.Connected);
@@ -2473,7 +2480,7 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
 		Prelogin(serverInfo.getServerName(), serverInfo.getPortNumber());
 
 		// If prelogin negotiated SSL encryption then, enable it on the TDS channel.
-		if (TDS.ENCRYPT_NOT_SUP != negotiatedEncryptionLevel) {
+		if (TDS.ENCRYPT_NOT_SUP != negotiatedEncryptionLevel && pipeType<1) {
 			tdsChannel.enableSSL(serverInfo.getServerName(), serverInfo.getPortNumber());
 		}
 
@@ -2621,6 +2628,7 @@ public class SQLServerConnection implements ISQLServerConnection, java.io.Serial
 
 			try {
 				bytesRead = tdsChannel.read(preloginResponse, responseBytesRead, responseLength - responseBytesRead);
+				tdsChannel.afterPreLogin();
 			} catch (SQLServerException e) {
 				connectionlogger.warning(
 						toString() + preloginErrorLogString + " Error reading prelogin response: " + e.getMessage());
