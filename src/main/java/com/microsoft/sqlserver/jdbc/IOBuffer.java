@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
@@ -862,6 +863,7 @@ final class TDSChannelPipe extends TDSChannelAbstr {
 	RandomAccessFile pipe;
 	ServerPortPlaceHolder info;
 	BufInStream bis;
+	int timeoutMillis;
 
 	TDSChannelPipe(SQLServerConnection con) {
 		super(con);
@@ -871,30 +873,68 @@ final class TDSChannelPipe extends TDSChannelAbstr {
 	final void open(ServerPortPlaceHolder info, int timeoutMillis, boolean useParallel, boolean useTnir,
 			boolean isTnirFirstAttempt, int timeoutMillisForFullTimeout) throws SQLServerException {
 		this.info = info;
+		this.timeoutMillis = timeoutMillis;
 		final String serverName = info.getServerName();
 		final String instanceName = info.getInstanceName();
-		final StringBuilder pipeName = new StringBuilder(64);
-		pipeName.append("\\\\");
-		if (serverName == null || serverName.length() == 0) {
-			pipeName.append('.');
-		} else {
-			pipeName.append(serverName);
-		}
-		pipeName.append("\\pipe");
-
-		if (instanceName != null && instanceName.length() != 0) {
-			pipeName.append("\\MSSQL$").append(instanceName);
-		}
-		pipeName.append("\\sql\\query");
-
-		try {
+		name = con.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.PIPE_PATH.toString());
+		if(name==null || name.isEmpty()) {
+			final StringBuilder pipeName = new StringBuilder(64);
+			pipeName.append("\\\\");
+			if (serverName == null || serverName.length() == 0) {
+				pipeName.append('.');
+			} else {
+				pipeName.append(serverName);
+			}
+			pipeName.append("\\pipe");
+	
+			if (instanceName != null && instanceName.length() != 0) {
+				pipeName.append("\\MSSQL$").append(instanceName);
+			}
+			pipeName.append("\\sql\\query");
 			name = pipeName.toString();
-			pipe = new RandomAccessFile(name, "rw");
-			outputStream = tcpOutputStream = new FileOutputStream(pipe.getFD());
-			inputStream = tcpInputStream = bis = new BufInStream(new FileInputStream(pipe.getFD()));
+		}
+		try {			
+			buildPipeAndStreams();			
 		} catch (Exception e) {
 			throw new SQLServerException("Failed to use local namedPipe", e);
 		}
+	}
+	
+	private final void buildPipeAndStreams() throws IOException {
+		final int retryMillis = this.timeoutMillis;
+		final long start = System.currentTimeMillis();
+		int exceptionCount=0;
+		Random random=null;
+		do {
+			try {
+				pipe = new RandomAccessFile(name, "rw");
+				outputStream = tcpOutputStream = new FileOutputStream(pipe.getFD());
+				String rb = con.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.RESPONSE_BUFFERING.toString());
+				boolean doRead = rb==null || rb.isEmpty() || Character.toLowerCase(rb.charAt(0))=='a'/*adaptive*/;
+				inputStream = tcpInputStream = bis = new BufInStream(new FileInputStream(pipe.getFD()), 8000, 18, doRead);
+			} catch (IOException ioe) {
+	            exceptionCount++;
+	            if (ioe.getMessage().toLowerCase( Locale.ENGLISH ).indexOf("all pipe instances are busy") >= 0) {
+	                // Per JTDS: Per a Microsoft knowledgebase article, wait 200 ms to 1 second each time
+	                // we get an "All pipe instances are busy" error.
+	                // http://support.microsoft.com/default.aspx?scid=KB;EN-US;165189
+	            	if(random==null) random = new Random();
+	                final int randomWait = random.nextInt(800) + 200;
+	                if (logger.isLoggable(Level.FINEST)) {
+	                    logger.log(Level.FINEST, "Retry #" + exceptionCount + " Wait " + randomWait + " ms: " +
+	                                   ioe.getMessage());
+	                }
+	                try {
+	                    Thread.sleep(randomWait);
+	                }
+	                catch (InterruptedException ie) {
+	                    // Do nothing; retry again
+	                }
+	            } else {
+	                throw ioe;
+	            }
+	        }
+		} while (bis == null && (System.currentTimeMillis() - start) < retryMillis);
 	}
 
 	@Override
@@ -903,9 +943,7 @@ final class TDSChannelPipe extends TDSChannelAbstr {
 			pipe.close();
 			inputStream.close();
 			outputStream.close();
-			pipe = new RandomAccessFile(name, "rw");
-			outputStream = tcpOutputStream = new FileOutputStream(pipe.getFD());
-			inputStream = tcpInputStream = bis = new BufInStream(new FileInputStream(pipe.getFD()));
+			buildPipeAndStreams();
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to reload namedPipe", e);
 		}
