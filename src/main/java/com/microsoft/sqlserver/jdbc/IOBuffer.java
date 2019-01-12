@@ -591,7 +591,7 @@ final class BufInStream extends FilterInputStream {
 	public BufInStream(InputStream in, int pktSize, int maxPkts, boolean readAll) {
 		super(in);
 		this.pktSize = pktSize>0 ? pktSize : 8000;
-		this.memMax = maxPkts>0 ? this.pktSize*maxPkts : this.pktSize*18;
+		this.memMax = maxPkts>0 ? this.pktSize*maxPkts : this.pktSize*128;
 		this.readAll = readAll;
 		this.buf = new byte[this.pktSize];
 	}
@@ -911,7 +911,9 @@ final class TDSChannelPipe extends TDSChannelAbstr {
 				outputStream = tcpOutputStream = new FileOutputStream(pipe.getFD());
 				String rb = con.activeConnectionProperties.getProperty(SQLServerDriverStringProperty.RESPONSE_BUFFERING.toString());
 				boolean doRead = rb==null || rb.isEmpty() || Character.toLowerCase(rb.charAt(0))=='a'/*adaptive*/;
-				inputStream = tcpInputStream = bis = new BufInStream(new FileInputStream(pipe.getFD()), 8000, 18, doRead);
+				String maxPkts = con.activeConnectionProperties.getProperty(SQLServerDriverIntProperty.PIPE_MAX_PKTS.toString());
+				int maxPktsInt = maxPkts!=null && !maxPkts.isEmpty() ? Integer.parseInt(maxPkts) : 0;
+				inputStream = tcpInputStream = bis = new BufInStream(new FileInputStream(pipe.getFD()), 0, maxPktsInt, doRead);
 			} catch (IOException ioe) {
 	            exceptionCount++;
 	            if (ioe.getMessage().toLowerCase( Locale.ENGLISH ).indexOf("all pipe instances are busy") >= 0) {

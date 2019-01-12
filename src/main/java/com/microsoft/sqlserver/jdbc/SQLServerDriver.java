@@ -318,6 +318,7 @@ enum SQLServerDriverStringProperty
 enum SQLServerDriverIntProperty {
 	NTLM                                	   ("NTLM",                              	   0),  
 	PIPE_TYPE                                  ("pipeType",                                0),
+	PIPE_MAX_PKTS                              ("pipeMaxPkts",                             0),
     PACKET_SIZE                                ("packetSize",                              TDS.DEFAULT_PACKET_SIZE),            
     LOCK_TIMEOUT                               ("lockTimeout",                             -1),
     LOGIN_TIMEOUT                              ("loginTimeout",                            15),
@@ -404,6 +405,7 @@ public final class SQLServerDriver implements java.sql.Driver {
         new SQLServerDriverPropertyInfo(SQLServerDriverIntProperty.NTLM.toString(),          		      					  Integer.toString(SQLServerDriverIntProperty.NTLM.getDefaultValue()),      		      				  false,      null),
         new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.PIPE_PATH.toString(),          		      			  SQLServerDriverStringProperty.PIPE_PATH.getDefaultValue(),      		      				  			  false,      null),
         new SQLServerDriverPropertyInfo(SQLServerDriverIntProperty.PIPE_TYPE.toString(),          		      				  Integer.toString(SQLServerDriverIntProperty.PIPE_TYPE.getDefaultValue()),      		      			  false,      null),
+        new SQLServerDriverPropertyInfo(SQLServerDriverIntProperty.PIPE_MAX_PKTS.toString(),          		      			  Integer.toString(SQLServerDriverIntProperty.PIPE_MAX_PKTS.getDefaultValue()),      		      		  false,      null),
         new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.DOMAIN.toString(),                          		      SQLServerDriverStringProperty.DOMAIN.getDefaultValue(),           									  false,      null),
         new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.KEY_STORE_AUTHENTICATION.toString(),            	      SQLServerDriverStringProperty.KEY_STORE_AUTHENTICATION.getDefaultValue(),       						  false,      new String[] {KeyStoreAuthentication.JavaKeyStorePassword.toString()}),
         new SQLServerDriverPropertyInfo(SQLServerDriverStringProperty.KEY_STORE_SECRET .toString(),            			      SQLServerDriverStringProperty.KEY_STORE_SECRET.getDefaultValue(),       								  false,      null),

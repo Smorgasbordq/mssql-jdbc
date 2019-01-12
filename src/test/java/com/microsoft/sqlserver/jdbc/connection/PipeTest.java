@@ -111,6 +111,7 @@ public class PipeTest extends AbstractTest {
 				    		conns[x].commit();
 			    		}catch(Exception e) {
 			    			// Ignore?
+			    			e.printStackTrace();
 			    		}
 			    	}
 	    		});
@@ -120,7 +121,7 @@ public class PipeTest extends AbstractTest {
 	    		es.shutdown();
 				es.awaitTermination(3, TimeUnit.MINUTES);
 				for(SQLServerConnection conn : conns)
-					conn.close();
+					if(conn!=null && !conn.isClosed()) conn.close();
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			} catch(Exception e) {
